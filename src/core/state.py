@@ -75,6 +75,12 @@ class VehicleRegistry:
     def get(self, vehicle_id: str) -> Optional[VehicleState]:
         return self._vehicles.get(vehicle_id)
 
+    def delete(self, vehicle_id: str) -> bool:
+        if vehicle_id in self._vehicles:
+            del self._vehicles[vehicle_id]
+            return True
+        return False
+
     def list(self) -> List[VehicleState]:
         return list(self._vehicles.values())
 
@@ -115,6 +121,9 @@ class FleetState:
     # -- Vehicle management -------------------------------------------------
     def register_vehicle(self, config: VehicleCreate) -> VehicleState:
         return self.vehicle_registry.register(config)
+
+    def delete_vehicle(self, vehicle_id: str) -> bool:
+        return self.vehicle_registry.delete(vehicle_id)
 
     def list_vehicles(self) -> List[VehicleState]:
         return self.vehicle_registry.list()

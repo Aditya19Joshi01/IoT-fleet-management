@@ -48,6 +48,17 @@ async def get_vehicle(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found"
         )
-    return VehicleInfo.from_state(vehicle)
 
-
+@router.delete(
+    "/{vehicle_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a vehicle from the registry.",
+)
+async def delete_vehicle(
+    vehicle_id: str, fleet_state: FleetState = Depends(get_fleet_state)
+) -> None:
+    success = fleet_state.delete_vehicle(vehicle_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found"
+        )

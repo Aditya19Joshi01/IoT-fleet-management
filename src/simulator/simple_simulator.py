@@ -13,7 +13,9 @@ from typing import Tuple
 
 import httpx
 
-INGEST_URL = "http://localhost:8000/api/telemetry/ingest"
+import os
+
+INGEST_URL = os.getenv("INGEST_URL", "http://localhost:8000/api/telemetry/ingest")
 
 
 async def simulate_vehicle(
@@ -69,8 +71,8 @@ async def simulate_vehicle(
 async def main() -> None:
     # Two demo vehicles in slightly different areas
     tasks = [
-        simulate_vehicle("truck-001", (37.7749, -122.4194)),  # SF-ish
-        simulate_vehicle("truck-002", (37.7849, -122.4094)),  # nearby
+        simulate_vehicle("truck-001", (37.7749, -122.4194)),  # SF Market St
+        simulate_vehicle("truck-002", (37.7849, -122.4094)),  # SF Union Square
     ]
     await asyncio.gather(*tasks)
 

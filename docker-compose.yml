@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - fleet-network
+
+  simulator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.simulator
+    volumes:
+      - ./src:/app/src
+    environment:
+      - PYTHONUNBUFFERED=1
+      - INGEST_URL=http://backend:8000/api/telemetry/ingest
+    depends_on:
+      - backend
+    networks:
+      - fleet-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    networks:
+      - fleet-network
+
+networks:
+  fleet-network:
+    driver: bridge
