@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Deque, Dict, List
 
 from .analytics import estimate_eta_minutes, update_idle_time, is_geofence_breached
@@ -151,7 +151,9 @@ class FleetState:
         return snapshots
 
     def get_recent_alerts(self, since_seconds: int = 3600) -> List[Alert]:
-        cutoff = datetime.utcnow() - timedelta(seconds=since_seconds)
+        # Use timezone-aware UTC datetimes to be compatible with telemetry
+        # timestamps coming from devices/simulators.
+        cutoff = datetime.now(timezone.utc) - timedelta(seconds=since_seconds)
         return [a for a in self.recent_alerts if a.timestamp >= cutoff]
 
 
