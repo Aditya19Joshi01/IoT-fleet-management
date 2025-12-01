@@ -1,10 +1,35 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class LatLng(BaseModel):
+    latitude: float
+    longitude: float
+
+
+class RouteConfig(BaseModel):
+    name: str | None = None
+    destination: LatLng
+
+
+class GeofenceConfig(BaseModel):
+    name: str
+    center: LatLng
+    radius_m: float
+
+
+class VehicleCreate(BaseModel):
+    vehicle_id: str
+    display_name: str | None = None
+    initial_position: LatLng | None = None
+    route: RouteConfig | None = None
+    geofence: GeofenceConfig | None = None
+    metadata: dict[str, str] | None = None
 
 
 class TelemetryIn(BaseModel):
@@ -50,6 +75,7 @@ class VehicleRoute:
 @dataclass
 class VehicleState:
     vehicle_id: str
+    display_name: Optional[str] = None
     last_telemetry: Optional[TelemetryPoint] = None
     telemetry_history: List[TelemetryPoint] = field(default_factory=list)
     total_idle_seconds: float = 0.0
@@ -58,6 +84,8 @@ class VehicleState:
     geofences: List[Geofence] = field(default_factory=list)
     last_geofence_breach: Optional[datetime] = None
     last_violent_event: Optional[datetime] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: dict[str, str] = field(default_factory=dict)
 
 
 class Alert(BaseModel):
@@ -82,5 +110,43 @@ class VehicleSnapshot(BaseModel):
 class DashboardState(BaseModel):
     vehicles: list[VehicleSnapshot]
     alerts: list[Alert]
+
+
+class VehicleInfo(BaseModel):
+    vehicle_id: str
+    display_name: str | None = None
+    created_at: datetime
+    last_update: datetime | None = None
+    route_destination: LatLng | None = None
+    geofences: list[GeofenceConfig] = Field(default_factory=list)
+    metadata: dict[str, str] = Field(default_factory=dict)
+
+    @classmethod
+    def from_state(cls, vehicle: VehicleState) -> VehicleInfo:
+        destination = None
+        if vehicle.assigned_route:
+            lat, lng = vehicle.assigned_route.destination
+            destination = LatLng(latitude=lat, longitude=lng)
+
+        geofences = [
+            GeofenceConfig(
+                name=gf.name,
+                center=LatLng(latitude=gf.center_lat, longitude=gf.center_lng),
+                radius_m=gf.radius_m,
+            )
+            for gf in vehicle.geofences
+        ]
+
+        last_update = vehicle.last_telemetry.timestamp if vehicle.last_telemetry else None
+
+        return cls(
+            vehicle_id=vehicle.vehicle_id,
+            display_name=vehicle.display_name,
+            created_at=vehicle.created_at,
+            last_update=last_update,
+            route_destination=destination,
+            geofences=geofences,
+            metadata=vehicle.metadata,
+        )
 
 

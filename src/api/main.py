@@ -1,10 +1,8 @@
 from contextlib import asynccontextmanager
-from typing import Dict
-
 from fastapi import FastAPI
 
 from src.core.state import FleetState
-from src.routers import telemetry, dashboard
+from src.routers import dashboard, telemetry, vehicles
 
 
 @asynccontextmanager
@@ -27,6 +25,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(telemetry.router, prefix="/api/telemetry", tags=["telemetry"])
+    app.include_router(vehicles.router, prefix="/api/vehicles", tags=["vehicles"])
     app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 
     return app
