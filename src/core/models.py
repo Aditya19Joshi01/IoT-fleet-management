@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 class TelemetryIn(BaseModel):
     vehicle_id: str
-    timestamp: datetime
+    timestamp: datetime | None = None
     latitude: float
     longitude: float
     speed_kmh: float

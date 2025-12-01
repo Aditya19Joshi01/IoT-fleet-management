@@ -5,7 +5,15 @@ from datetime import datetime, timedelta
 from typing import Deque, Dict, List
 
 from .analytics import estimate_eta_minutes, update_idle_time, is_geofence_breached
-from .models import Alert, TelemetryIn, TelemetryPoint, VehicleSnapshot, VehicleState
+from .models import (
+    Alert,
+    Geofence,
+    TelemetryIn,
+    TelemetryPoint,
+    VehicleRoute,
+    VehicleSnapshot,
+    VehicleState,
+)
 
 
 class FleetState:
@@ -23,6 +31,25 @@ class FleetState:
         if not vehicle:
             vehicle = VehicleState(vehicle_id=data.vehicle_id)
             self.vehicles[data.vehicle_id] = vehicle
+
+        # Initialize a very simple default route & geofence for PoC,
+        # so ETA and geofence calculations have something to work with.
+        if vehicle.assigned_route is None:
+            vehicle.assigned_route = VehicleRoute(
+                route_id="default",
+                name="Default Demo Route",
+                waypoints=[],
+                destination=(data.latitude, data.longitude),  # will be updated over time
+            )
+        if not vehicle.geofences:
+            vehicle.geofences.append(
+                Geofence(
+                    name="Demo Depot",
+                    center_lat=data.latitude,
+                    center_lng=data.longitude,
+                    radius_m=500.0,
+                )
+            )
 
         point = TelemetryPoint(
             timestamp=data.timestamp,
