@@ -11,6 +11,11 @@ export const getVehicles = async () => {
     return response.data;
 };
 
+export const getVehicle = async (vehicleId) => {
+    const response = await api.get(`/vehicles/${vehicleId}`);
+    return response.data;
+};
+
 export const getDashboardSnapshot = async () => {
     const response = await api.get('/dashboard/snapshot');
     return response.data;
@@ -22,11 +27,24 @@ export const registerVehicle = async (vehicleData) => {
 };
 
 export const deleteVehicle = async (vehicleId) => {
-    // Note: The backend doesn't seem to have a delete endpoint in the README description,
-    // but I should check the code. If not, I'll just implement the UI for it and maybe add it to backend if needed.
-    // Checking main.py... it includes vehicles router.
-    // Let's assume for now we might need to add it or it exists.
-    // Actually, I'll check the router code in a moment.
-    // For now, I'll leave this placeholder.
     return api.delete(`/vehicles/${vehicleId}`);
+};
+
+export const getHistory = async (vehicleId) => {
+    const response = await api.get(`/telemetry/history/${vehicleId}`);
+    return response.data;
+};
+
+export const getGeofences = async () => {
+    const response = await api.get('/geofences');
+    return response.data;
+};
+
+export const createGeofence = async (data) => {
+    const response = await api.post('/geofences', data);
+    return response.data;
+};
+
+export const deleteGeofence = async (id) => {
+    return api.delete(`/geofences/${id}`);
 };

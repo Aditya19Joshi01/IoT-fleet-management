@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, Truck, MapPin } from 'lucide-react';
+import { Trash2, Plus, Truck, MapPin, Activity } from 'lucide-react';
 
-export default function VehicleList({ vehicles, onSelect, onDelete, onAdd }) {
+export default function VehicleList({ vehicles, onSelect, onDelete, onAdd, onHistory }) {
     const [isAdding, setIsAdding] = useState(false);
     const [newId, setNewId] = useState('');
 
@@ -72,16 +72,21 @@ export default function VehicleList({ vehicles, onSelect, onDelete, onAdd }) {
                                 </div>
                             </div>
                         </div>
-                        <button
-                            className="btn btn-danger"
-                            style={{ padding: '0.25rem' }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('Delete vehicle?')) onDelete(v.vehicle_id);
-                            }}
-                        >
-                            <Trash2 size={14} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                                className="btn btn-sm"
+                                onClick={(e) => { e.stopPropagation(); onHistory && onHistory(v.vehicle_id); }}
+                                title="View History"
+                            >
+                                <Activity size={14} />
+                            </button>
+                            <button
+                                className="btn btn-danger btn-sm"
+                                onClick={(e) => { e.stopPropagation(); onDelete(v.vehicle_id); }}
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>

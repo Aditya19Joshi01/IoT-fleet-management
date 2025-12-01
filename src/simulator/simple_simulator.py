@@ -9,25 +9,53 @@ requests to the FastAPI ingestion endpoint.
 import asyncio
 import math
 from datetime import datetime, timezone
-from typing import Tuple
+from typing import Tuple, Optional
 
 import httpx
-
 import os
 
+BASE_URL = os.getenv("INGEST_URL", "http://localhost:8000/api/telemetry/ingest").rsplit("/api", 1)[0]
 INGEST_URL = os.getenv("INGEST_URL", "http://localhost:8000/api/telemetry/ingest")
 
+USERNAME = "simulator"
+PASSWORD = "simulator_password"
+
+async def get_access_token() -> Optional[str]:
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        # 1. Try to register (ignore if exists)
+        try:
+            await client.post(
+                f"{BASE_URL}/api/auth/register",
+                json={"username": USERNAME, "password": PASSWORD}
+            )
+        except Exception:
+            pass # Likely already registered
+
+        # 2. Login
+        try:
+            resp = await client.post(
+                f"{BASE_URL}/api/auth/token",
+                data={"username": USERNAME, "password": PASSWORD}
+            )
+            resp.raise_for_status()
+            return resp.json()["access_token"]
+        except Exception as e:
+            print(f"[Simulator] Auth failed: {e}")
+            return None
 
 async def simulate_vehicle(
     vehicle_id: str,
     center: Tuple[float, float],
+    token: str,
     radius_km: float = 2.0,
     period_seconds: int = 5,
 ) -> None:
     lat0, lng0 = center
     angle = 0.0
+    
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
 
-    async with httpx.AsyncClient(timeout=5.0) as client:
+    async with httpx.AsyncClient(timeout=5.0, headers=headers) as client:
         while True:
             # Move in a slow circle around the center
             angle += math.radians(10)
@@ -69,10 +97,20 @@ async def simulate_vehicle(
 
 
 async def main() -> None:
+    # Wait for backend to be ready
+    print("[Simulator] Waiting for backend...")
+    await asyncio.sleep(5)
+    
+    token = await get_access_token()
+    if token:
+        print("[Simulator] Authenticated successfully")
+    else:
+        print("[Simulator] Warning: Running without auth token")
+
     # Two demo vehicles in slightly different areas
     tasks = [
-        simulate_vehicle("truck-001", (37.7749, -122.4194)),  # SF Market St
-        simulate_vehicle("truck-002", (37.7849, -122.4094)),  # SF Union Square
+        simulate_vehicle("truck-001", (37.7749, -122.4194), token),  # SF Market St
+        simulate_vehicle("truck-002", (37.7849, -122.4094), token),  # SF Union Square
     ]
     await asyncio.gather(*tasks)
 

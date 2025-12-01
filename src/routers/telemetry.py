@@ -28,7 +28,30 @@ async def ingest_telemetry(
     if payload.timestamp is None:
         payload.timestamp = datetime.utcnow()
 
-    fleet_state.ingest_telemetry(payload)
+    await fleet_state.ingest_telemetry(payload)
     return {"status": "accepted"}
 
 
+    await fleet_state.ingest_telemetry(payload)
+    return {"status": "accepted"}
+
+
+@router.get(
+    "/history/{vehicle_id}",
+    summary="Get historical telemetry for a vehicle.",
+)
+async def get_history(
+    vehicle_id: str, fleet_state: FleetState = Depends(get_fleet_state)
+) -> list[dict]:
+    points = fleet_state.get_history(vehicle_id)
+    # Convert dataclasses to dicts for JSON response
+    return [
+        {
+            "timestamp": p.timestamp,
+            "speed_kmh": p.speed_kmh,
+            "fuel_level_pct": p.fuel_level_pct,
+            "latitude": p.latitude,
+            "longitude": p.longitude
+        }
+        for p in points
+    ]

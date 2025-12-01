@@ -11,6 +11,7 @@ services:
       - ./src:/app/src
     environment:
       - PYTHONUNBUFFERED=1
+      - INFLUXDB_TOKEN=my-super-secret-auth-token
     networks:
       - fleet-network
 
@@ -41,6 +42,39 @@ services:
       - VITE_API_URL=http://localhost:8000
     networks:
       - fleet-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=fleet_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - fleet-network
+
+  influxdb:
+    image: influxdb:2.7-alpine
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_ORG=fleet_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=telemetry
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    ports:
+      - "8086:8086"
+    networks:
+      - fleet-network
+
+volumes:
+  postgres_data:
+  influxdb_data:
 
 networks:
   fleet-network:

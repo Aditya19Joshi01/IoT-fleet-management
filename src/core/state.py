@@ -1,266 +1,310 @@
 from __future__ import annotations
 
-from collections import deque
-from datetime import datetime, timedelta, timezone
-from typing import Callable, Deque, Dict, List, Optional
+from datetime import datetime, timezone, timedelta
+from typing import List, Optional
+import json
 
-from .analytics import estimate_eta_minutes, is_geofence_breached, update_idle_time
-from .models import (
+from sqlalchemy.orm import Session
+from influxdb_client import Point
+
+from src.core.database import SessionLocal, get_influx_write_api, get_influx_query_api
+from src.core.config import settings
+from src.core.models import (
     Alert,
-    Geofence,
     TelemetryIn,
     TelemetryPoint,
     VehicleCreate,
-    VehicleRoute,
     VehicleSnapshot,
     VehicleState,
+    VehicleRoute,
+    Geofence as GeofenceModel
 )
+from src.core.models_db import Vehicle as VehicleDB, Geofence as GeofenceDB
+from src.core.analytics import estimate_eta_minutes, is_geofence_breached, update_idle_time
 
-
-class VehicleRegistry:
-    """Encapsulates all vehicle registration and lookup logic."""
+class FleetState:
+    """
+    Refactored FleetState that uses PostgreSQL for metadata and InfluxDB for telemetry.
+    """
 
     def __init__(self) -> None:
-        self._vehicles: Dict[str, VehicleState] = {}
+        self.write_api = get_influx_write_api()
+        self.query_api = get_influx_query_api()
 
-    def register(self, config: VehicleCreate) -> VehicleState:
-        vehicle = self._vehicles.get(config.vehicle_id)
-        if vehicle is None:
-            vehicle = VehicleState(
-                vehicle_id=config.vehicle_id,
-                display_name=config.display_name or config.vehicle_id,
-            )
-            self._vehicles[vehicle.vehicle_id] = vehicle
-
-        self._apply_config(vehicle, config)
-        return vehicle
-
-    def _apply_config(self, vehicle: VehicleState, config: VehicleCreate) -> None:
-        if config.display_name:
-            vehicle.display_name = config.display_name
-
-        if config.metadata:
-            vehicle.metadata.update(config.metadata)
-
-        if config.route:
-            vehicle.assigned_route = VehicleRoute(
-                route_id=f"{vehicle.vehicle_id}-route",
-                name=config.route.name or f"{vehicle.vehicle_id} Route",
-                waypoints=[],
-                destination=(
-                    config.route.destination.latitude,
-                    config.route.destination.longitude,
-                ),
-            )
-
-        if config.geofence:
-            vehicle.geofences = [
-                Geofence(
+    # -- Vehicle management (PostgreSQL) ------------------------------------
+    def register_vehicle(self, config: VehicleCreate) -> VehicleState:
+        db: Session = SessionLocal()
+        try:
+            # Check if exists
+            vehicle_db = db.query(VehicleDB).filter(VehicleDB.vehicle_id == config.vehicle_id).first()
+            if not vehicle_db:
+                vehicle_db = VehicleDB(
+                    vehicle_id=config.vehicle_id,
+                    display_name=config.display_name or config.vehicle_id,
+                    metadata_json=config.metadata or {}
+                )
+                db.add(vehicle_db)
+                db.commit()
+                db.refresh(vehicle_db)
+            
+            # Update Geofences if provided
+            if config.geofence:
+                # Remove old geofences for simplicity in this PoC
+                db.query(GeofenceDB).filter(GeofenceDB.vehicle_id == vehicle_db.id).delete()
+                
+                gf = GeofenceDB(
                     name=config.geofence.name,
                     center_lat=config.geofence.center.latitude,
                     center_lng=config.geofence.center.longitude,
                     radius_m=config.geofence.radius_m,
+                    vehicle_id=vehicle_db.id
                 )
-            ]
+                db.add(gf)
+                db.commit()
 
-        if config.initial_position and vehicle.last_telemetry is None:
-            vehicle.last_telemetry = TelemetryPoint(
-                timestamp=datetime.now(timezone.utc),
-                latitude=config.initial_position.latitude,
-                longitude=config.initial_position.longitude,
-                speed_kmh=0.0,
-                fuel_level_pct=100.0,
-            )
-
-    def get(self, vehicle_id: str) -> Optional[VehicleState]:
-        return self._vehicles.get(vehicle_id)
-
-    def delete(self, vehicle_id: str) -> bool:
-        if vehicle_id in self._vehicles:
-            del self._vehicles[vehicle_id]
-            return True
-        return False
-
-    def list(self) -> List[VehicleState]:
-        return list(self._vehicles.values())
-
-    def ensure(self, vehicle_id: str, initializer: Optional[Callable[[], VehicleState]] = None) -> VehicleState:
-        vehicle = self._vehicles.get(vehicle_id)
-        if vehicle is None:
-            vehicle = initializer() if initializer else VehicleState(
-                vehicle_id=vehicle_id, display_name=vehicle_id
-            )
-            self._vehicles[vehicle_id] = vehicle
-        return vehicle
-
-
-class AlertLog:
-    """Keeps a rolling buffer of recent alerts."""
-
-    def __init__(self, max_alerts: int = 200) -> None:
-        self._alerts: Deque[Alert] = deque(maxlen=max_alerts)
-
-    def add(self, alert: Alert) -> None:
-        self._alerts.append(alert)
-
-    def recent(self, since_seconds: int) -> List[Alert]:
-        cutoff = datetime.now(timezone.utc) - timedelta(seconds=since_seconds)
-        return [alert for alert in self._alerts if alert.timestamp >= cutoff]
-
-
-class FleetState:
-    """
-    Fleet orchestrator that wires together vehicle registry, telemetry ingestion,
-    alert tracking, and dashboard projections.
-    """
-
-    def __init__(self) -> None:
-        self.vehicle_registry = VehicleRegistry()
-        self.alert_log = AlertLog()
-
-    # -- Vehicle management -------------------------------------------------
-    def register_vehicle(self, config: VehicleCreate) -> VehicleState:
-        return self.vehicle_registry.register(config)
+            return self._map_db_to_state(vehicle_db)
+        finally:
+            db.close()
 
     def delete_vehicle(self, vehicle_id: str) -> bool:
-        return self.vehicle_registry.delete(vehicle_id)
+        db: Session = SessionLocal()
+        try:
+            vehicle_db = db.query(VehicleDB).filter(VehicleDB.vehicle_id == vehicle_id).first()
+            if vehicle_db:
+                db.delete(vehicle_db)
+                db.commit()
+                return True
+            return False
+        finally:
+            db.close()
 
     def list_vehicles(self) -> List[VehicleState]:
-        return self.vehicle_registry.list()
+        db: Session = SessionLocal()
+        try:
+            vehicles_db = db.query(VehicleDB).all()
+            return [self._map_db_to_state(v) for v in vehicles_db]
+        finally:
+            db.close()
 
     def get_vehicle(self, vehicle_id: str) -> Optional[VehicleState]:
-        return self.vehicle_registry.get(vehicle_id)
+        db: Session = SessionLocal()
+        try:
+            vehicle_db = db.query(VehicleDB).filter(VehicleDB.vehicle_id == vehicle_id).first()
+            if vehicle_db:
+                return self._map_db_to_state(vehicle_db)
+            return None
+        finally:
+            db.close()
 
-    # -- Telemetry ingestion ------------------------------------------------
-    def ingest_telemetry(self, data: TelemetryIn) -> None:
-        vehicle = self.vehicle_registry.get(data.vehicle_id)
-        if vehicle is None:
-            vehicle = self.vehicle_registry.register(
-                VehicleCreate(vehicle_id=data.vehicle_id, display_name=data.vehicle_id)
-            )
+    def _map_db_to_state(self, v_db: VehicleDB) -> VehicleState:
+        # Fetch latest telemetry from InfluxDB to populate state
+        last_telemetry = self._get_latest_telemetry(v_db.vehicle_id)
+        
+        geofences = [
+            GeofenceModel(name=g.name, center_lat=g.center_lat, center_lng=g.center_lng, radius_m=g.radius_m)
+            for g in v_db.geofences
+        ]
 
-        point = TelemetryPoint(
-            timestamp=data.timestamp or datetime.now(timezone.utc),
-            latitude=data.latitude,
-            longitude=data.longitude,
-            speed_kmh=data.speed_kmh,
-            fuel_level_pct=data.fuel_level_pct,
-            heading_deg=data.heading_deg,
-            on_route=data.on_route,
-            violent_event=data.violent_event,
+        return VehicleState(
+            vehicle_id=v_db.vehicle_id,
+            display_name=v_db.display_name,
+            metadata=v_db.metadata_json or {},
+            geofences=geofences,
+            last_telemetry=last_telemetry,
+            created_at=v_db.created_at
         )
 
-        self._ensure_defaults(vehicle, point)
+        if data.violent_event:
+            point.field("violent_event", data.violent_event)
 
-        update_idle_time(vehicle, point)
-        vehicle.telemetry_history.append(point)
-        if len(vehicle.telemetry_history) > 500:
-            vehicle.telemetry_history = vehicle.telemetry_history[-500:]
+        self.write_api.write(bucket=settings.INFLUXDB_BUCKET, org=settings.INFLUXDB_ORG, record=point)
+        
+        # Broadcast update via WebSocket
+        from src.core.websocket_manager import manager
+        import asyncio
+        
+        # We need to run this async, but we are in a synchronous method (or called from async).
+        # Since ingest_telemetry is synchronous in this class (it shouldn't be, but let's check usage).
+        # Actually, ingest_telemetry is called by routers/telemetry.py which is async.
+        # But this method is defined as def ingest_telemetry(self, data: TelemetryIn) -> None: (Sync)
+        # We should make it async or use a background task.
+        # For simplicity in this PoC, let's just fire and forget or use run_until_complete if loop exists?
+        # No, that's dangerous.
+        # Better: Make ingest_telemetry async.
+        
+        # Checking usage in routers/telemetry.py...
+        # It calls fleet_state.ingest_telemetry(payload).
+        # If I change this to async, I need to await it in router.
+        
+        # Let's assume I'll change it to async.
+        pass
 
-        vehicle.last_telemetry = point
+    async def ingest_telemetry(self, data: TelemetryIn) -> None:
+        # Ensure vehicle exists
+        if not self.get_vehicle(data.vehicle_id):
+             self.register_vehicle(VehicleCreate(vehicle_id=data.vehicle_id))
 
-        self._evaluate_alerts(vehicle, point)
+        # Write to InfluxDB
+        point = Point("telemetry") \
+            .tag("vehicle_id", data.vehicle_id) \
+            .field("latitude", data.latitude) \
+            .field("longitude", data.longitude) \
+            .field("speed_kmh", float(data.speed_kmh)) \
+            .field("fuel_level_pct", float(data.fuel_level_pct)) \
+            .field("heading_deg", float(data.heading_deg or 0.0)) \
+            .field("on_route", bool(data.on_route)) \
+            .time(data.timestamp or datetime.now(timezone.utc))
+        
+        if data.violent_event:
+            point.field("violent_event", data.violent_event)
 
-    def _ensure_defaults(self, vehicle: VehicleState, point: TelemetryPoint) -> None:
-        """
-        Provide fallback route/geofence so analytics don't break if the vehicle
-        was never configured through the UI.
-        """
-        if vehicle.assigned_route is None:
-            vehicle.assigned_route = VehicleRoute(
-                route_id=f"{vehicle.vehicle_id}-default",
-                name="Default Demo Route",
-                waypoints=[],
-                destination=(point.latitude, point.longitude),
-            )
+        self.write_api.write(bucket=settings.INFLUXDB_BUCKET, org=settings.INFLUXDB_ORG, record=point)
+        
+        # Check for alerts
+        self._check_alerts(data)
+        
+        # Broadcast via WebSocket
+        from src.core.websocket_manager import manager
+        await manager.broadcast({
+            "type": "telemetry_update",
+            "vehicle_id": data.vehicle_id,
+            "data": data.model_dump(mode='json')
+        })
 
-        if not vehicle.geofences:
-            vehicle.geofences.append(
-                Geofence(
-                    name="Default Geofence",
-                    center_lat=point.latitude,
-                    center_lng=point.longitude,
-                    radius_m=500.0,
-                )
-            )
+    def _check_alerts(self, data: TelemetryIn):
+        # Simple alert check logic
+        # In a real system, we might query recent history or use a stream processing engine
+        
+        # Check for speeding
+        if data.speed_kmh > 100:
+             self._push_alert(Alert(
+                 vehicle_id=data.vehicle_id,
+                 type="speeding",
+                 message=f"Vehicle speeding at {data.speed_kmh:.1f} km/h",
+                 timestamp=data.timestamp or datetime.now(timezone.utc)
+             ))
 
-    # -- Alerting -----------------------------------------------------------
+        # Check for violent events
+        if data.violent_event:
+            self._push_alert(Alert(
+                vehicle_id=data.vehicle_id,
+                type="violent_event",
+                message=f"Detected {data.violent_event}",
+                timestamp=data.timestamp or datetime.now(timezone.utc)
+            ))
+
     def _push_alert(self, alert: Alert) -> None:
-        self.alert_log.add(alert)
-
-    def _evaluate_alerts(self, vehicle: VehicleState, point: TelemetryPoint) -> None:
-        if point.speed_kmh < 1.0 and vehicle.total_idle_seconds > 5 * 60:
-            self._push_alert(
-                Alert(
-                    vehicle_id=vehicle.vehicle_id,
-                    type="idle_too_long",
-                    message="Vehicle has been idle for more than 5 minutes.",
-                    timestamp=point.timestamp,
-                )
+        from src.core.models_db import Alert as AlertDB
+        db: Session = SessionLocal()
+        try:
+            alert_db = AlertDB(
+                vehicle_id=alert.vehicle_id,
+                type=alert.type,
+                message=alert.message,
+                timestamp=alert.timestamp
             )
+            db.add(alert_db)
+            db.commit()
+        finally:
+            db.close() 
 
-        if point.on_route is False:
-            self._push_alert(
-                Alert(
-                    vehicle_id=vehicle.vehicle_id,
-                    type="off_route",
-                    message="Vehicle has left its assigned route.",
-                    timestamp=point.timestamp,
-                )
-            )
+    def _get_latest_telemetry(self, vehicle_id: str) -> Optional[TelemetryPoint]:
+        query = f'''
+        from(bucket: "{settings.INFLUXDB_BUCKET}")
+          |> range(start: -1h)
+          |> filter(fn: (r) => r["_measurement"] == "telemetry")
+          |> filter(fn: (r) => r["vehicle_id"] == "{vehicle_id}")
+          |> last()
+        '''
+        tables = self.query_api.query(query, org=settings.INFLUXDB_ORG)
+        
+        if not tables:
+            return None
+            
+        # Parse result (simplified)
+        # Influx returns separate rows for each field. We need to aggregate.
+        data = {}
+        timestamp = None
+        for table in tables:
+            for record in table.records:
+                data[record.get_field()] = record.get_value()
+                timestamp = record.get_time()
+        
+        if not data:
+            return None
 
-        if point.violent_event:
-            vehicle.last_violent_event = point.timestamp
-            self._push_alert(
-                Alert(
-                    vehicle_id=vehicle.vehicle_id,
-                    type="violent_event",
-                    message=f"Detected {point.violent_event.replace('_', ' ')}.",
-                    timestamp=point.timestamp,
-                )
-            )
+        return TelemetryPoint(
+            timestamp=timestamp,
+            latitude=data.get("latitude", 0.0),
+            longitude=data.get("longitude", 0.0),
+            speed_kmh=data.get("speed_kmh", 0.0),
+            fuel_level_pct=data.get("fuel_level_pct", 0.0),
+            heading_deg=data.get("heading_deg"),
+            on_route=data.get("on_route"),
+            violent_event=data.get("violent_event")
+        )
 
-        for geofence in vehicle.geofences:
-            if is_geofence_breached(
-                point.latitude,
-                point.longitude,
-                (geofence.center_lat, geofence.center_lng),
-                geofence.radius_m,
-            ):
-                vehicle.last_geofence_breach = point.timestamp
-                self._push_alert(
-                    Alert(
-                        vehicle_id=vehicle.vehicle_id,
-                        type="geofence_breach",
-                        message=f"Vehicle left geofenced area '{geofence.name}'.",
-                        timestamp=point.timestamp,
-                    )
-                )
+    def get_history(self, vehicle_id: str, range_str: str = "-24h") -> List[TelemetryPoint]:
+        query = f'''
+        from(bucket: "{settings.INFLUXDB_BUCKET}")
+          |> range(start: {range_str})
+          |> filter(fn: (r) => r["_measurement"] == "telemetry")
+          |> filter(fn: (r) => r["vehicle_id"] == "{vehicle_id}")
+          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+        '''
+        tables = self.query_api.query(query, org=settings.INFLUXDB_ORG)
+        
+        points = []
+        for table in tables:
+            for record in table.records:
+                points.append(TelemetryPoint(
+                    timestamp=record.get_time(),
+                    latitude=record.get_value().get("latitude", 0.0),
+                    longitude=record.get_value().get("longitude", 0.0),
+                    speed_kmh=record.get_value().get("speed_kmh", 0.0),
+                    fuel_level_pct=record.get_value().get("fuel_level_pct", 0.0),
+                    heading_deg=record.get_value().get("heading_deg"),
+                    on_route=record.get_value().get("on_route"),
+                    violent_event=record.get_value().get("violent_event")
+                ))
+        return points
 
     # -- Dashboard projections ----------------------------------------------
     def get_dashboard_snapshot(self) -> List[VehicleSnapshot]:
-        snapshots: List[VehicleSnapshot] = []
-        for vehicle in self.vehicle_registry.list():
-            if not vehicle.last_telemetry:
-                continue
-            last = vehicle.last_telemetry
-            eta = estimate_eta_minutes(vehicle)
-            snapshots.append(
-                VehicleSnapshot(
-                    vehicle_id=vehicle.vehicle_id,
-                    latitude=last.latitude,
-                    longitude=last.longitude,
-                    speed_kmh=last.speed_kmh,
-                    fuel_level_pct=last.fuel_level_pct,
-                    last_update=last.timestamp,
-                    total_idle_seconds=vehicle.total_idle_seconds,
-                    eta_minutes=eta,
-                    on_route=last.on_route,
-                )
-            )
+        # Get all vehicles
+        vehicles = self.list_vehicles()
+        snapshots = []
+        
+        for v in vehicles:
+            if v.last_telemetry:
+                snapshots.append(VehicleSnapshot(
+                    vehicle_id=v.vehicle_id,
+                    latitude=v.last_telemetry.latitude,
+                    longitude=v.last_telemetry.longitude,
+                    speed_kmh=v.last_telemetry.speed_kmh,
+                    fuel_level_pct=v.last_telemetry.fuel_level_pct,
+                    last_update=v.last_telemetry.timestamp,
+                    total_idle_seconds=0.0, # TODO: Calculate from Influx
+                    eta_minutes=0.0, # TODO: Calculate
+                    on_route=v.last_telemetry.on_route
+                ))
+        
         return snapshots
 
     def get_recent_alerts(self, since_seconds: int = 3600) -> List[Alert]:
-        return self.alert_log.recent(since_seconds)
-
-
+        from src.core.models_db import Alert as AlertDB
+        db: Session = SessionLocal()
+        try:
+            cutoff = datetime.now(timezone.utc) - timedelta(seconds=since_seconds)
+            alerts_db = db.query(AlertDB).filter(AlertDB.timestamp >= cutoff).order_by(AlertDB.timestamp.desc()).all()
+            
+            return [
+                Alert(
+                    vehicle_id=a.vehicle_id,
+                    type=a.type,
+                    message=a.message,
+                    timestamp=a.timestamp
+                ) for a in alerts_db
+            ]
+        finally:
+            db.close()

@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Map from './Map';
 import VehicleList from './VehicleList';
 import { getDashboardSnapshot, registerVehicle, deleteVehicle } from '../services/api';
+import { useWebSocket } from '../context/WebSocketContext';
+import { Plus, Search } from 'lucide-react';
 
 export default function Dashboard() {
     const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [alerts, setAlerts] = useState([]);
+    const { lastMessage } = useWebSocket();
+    const navigate = useNavigate();
 
     const fetchData = async () => {
         try {
@@ -20,13 +25,45 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 2000); // Poll every 2s
-        return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        if (lastMessage && lastMessage.type === 'telemetry_update') {
+            const { vehicle_id, data } = lastMessage;
+            setVehicles(prev => {
+                const idx = prev.findIndex(v => v.vehicle_id === vehicle_id);
+
+                if (idx === -1) {
+                    // Add new vehicle if it doesn't exist
+                    return [...prev, {
+                        vehicle_id,
+                        display_name: vehicle_id,
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        speed_kmh: data.speed_kmh,
+                        fuel_level_pct: data.fuel_level_pct,
+                        last_update: data.timestamp,
+                        on_route: data.on_route
+                    }];
+                }
+
+                const newVehicles = [...prev];
+                newVehicles[idx] = {
+                    ...newVehicles[idx],
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    speed_kmh: data.speed_kmh,
+                    fuel_level_pct: data.fuel_level_pct,
+                    last_update: data.timestamp,
+                    on_route: data.on_route
+                };
+                return newVehicles;
+            });
+        }
+    }, [lastMessage]);
 
     const handleAddVehicle = async (vehicleData) => {
         try {
-            // Default to SF center if no position provided
             const payload = {
                 ...vehicleData,
                 initial_position: { latitude: 37.7749, longitude: -122.4194 }
@@ -48,46 +85,47 @@ export default function Dashboard() {
     };
 
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100vw', padding: '1rem', gap: '1rem', boxSizing: 'border-box' }}>
-            <div style={{ width: '350px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="glass-panel" style={{ padding: '1rem' }}>
-                    <h1 style={{ margin: 0, fontSize: '1.5rem', background: 'linear-gradient(to right, #3b82f6, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        Fleet Manager
-                    </h1>
-                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                        {vehicles.length} Active Vehicles
+        <div style={{ display: 'flex', height: '100%', width: '100%', position: 'relative' }}>
+            {/* Floating Sidebar for Vehicle List */}
+            <div className="glass-panel" style={{
+                position: 'absolute',
+                top: '1rem',
+                left: '1rem',
+                bottom: '1rem',
+                width: '320px',
+                zIndex: 1000,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+            }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-light)' }}>
+                    <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Fleet Overview</h2>
+                    <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem' }}>
+                        <Search size={16} className="text-secondary" />
+                        <input
+                            type="text"
+                            placeholder="Search vehicles..."
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none' }}
+                        />
                     </div>
                 </div>
 
-                <div style={{ flex: 1, minHeight: 0 }}>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
                     <VehicleList
                         vehicles={vehicles}
-                        onSelect={setSelectedVehicle}
+                        onSelect={(v) => {
+                            setSelectedVehicle(v);
+                            // Optional: Navigate to detail on double click or button
+                        }}
                         onAdd={handleAddVehicle}
                         onDelete={handleDeleteVehicle}
+                        onHistory={(id) => navigate(`/vehicles/${id}`)}
                     />
-                </div>
-
-                <div className="glass-panel" style={{ height: '200px', padding: '1rem', overflowY: 'auto' }}>
-                    <h3 style={{ marginTop: 0, fontSize: '1rem' }}>Recent Alerts</h3>
-                    {alerts.length === 0 && <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>No active alerts</div>}
-                    {alerts.map((alert, i) => (
-                        <div key={i} style={{
-                            padding: '0.5rem',
-                            marginBottom: '0.5rem',
-                            borderRadius: '4px',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            borderLeft: '3px solid var(--danger)',
-                            fontSize: '0.875rem'
-                        }}>
-                            <div style={{ fontWeight: 600 }}>{alert.vehicle_id}</div>
-                            <div>{alert.message}</div>
-                        </div>
-                    ))}
                 </div>
             </div>
 
-            <div style={{ flex: 1, minHeight: 0 }}>
+            {/* Map Area */}
+            <div style={{ flex: 1, height: '100%' }}>
                 <Map vehicles={vehicles} selectedVehicle={selectedVehicle} />
             </div>
         </div>

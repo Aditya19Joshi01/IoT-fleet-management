@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-
 from src.core.models import VehicleCreate, VehicleInfo
 from src.core.state import FleetState
+from src.routers.auth import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 def get_fleet_state(request: Request) -> FleetState:
