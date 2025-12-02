@@ -235,10 +235,10 @@ class FleetState:
 
         return TelemetryPoint(
             timestamp=timestamp,
-            latitude=data.get("latitude", 0.0),
-            longitude=data.get("longitude", 0.0),
-            speed_kmh=data.get("speed_kmh", 0.0),
-            fuel_level_pct=data.get("fuel_level_pct", 0.0),
+            latitude=data.get("latitude") or 0.0,
+            longitude=data.get("longitude") or 0.0,
+            speed_kmh=data.get("speed_kmh") or 0.0,
+            fuel_level_pct=data.get("fuel_level_pct") or 0.0,
             heading_deg=data.get("heading_deg"),
             on_route=data.get("on_route"),
             violent_event=data.get("violent_event")
@@ -257,16 +257,23 @@ class FleetState:
         points = []
         for table in tables:
             for record in table.records:
-                points.append(TelemetryPoint(
-                    timestamp=record.get_time(),
-                    latitude=record.get_value().get("latitude", 0.0),
-                    longitude=record.get_value().get("longitude", 0.0),
-                    speed_kmh=record.get_value().get("speed_kmh", 0.0),
-                    fuel_level_pct=record.get_value().get("fuel_level_pct", 0.0),
-                    heading_deg=record.get_value().get("heading_deg"),
-                    on_route=record.get_value().get("on_route"),
-                    violent_event=record.get_value().get("violent_event")
-                ))
+                try:
+                    # When using pivot, fields are columns in the record
+                    # Access via record.values or record[field]
+                    vals = record.values
+                    points.append(TelemetryPoint(
+                        timestamp=record.get_time(),
+                        latitude=vals.get("latitude") or 0.0,
+                        longitude=vals.get("longitude") or 0.0,
+                        speed_kmh=vals.get("speed_kmh") or 0.0,
+                        fuel_level_pct=vals.get("fuel_level_pct") or 0.0,
+                        heading_deg=vals.get("heading_deg"),
+                        on_route=vals.get("on_route"),
+                        violent_event=vals.get("violent_event")
+                    ))
+                except Exception as e:
+                    print(f"Error parsing InfluxDB record: {e}")
+                    continue
         return points
 
     # -- Dashboard projections ----------------------------------------------

@@ -1,0 +1,191 @@
+﻿backend-1  | INFO:     Will watch for changes in these directories: ['/app']
+backend-1  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+backend-1  | INFO:     Started reloader process [1] using WatchFiles
+backend-1  | INFO:     Started server process [9]
+backend-1  | INFO:     Waiting for application startup.
+backend-1  | Checking database connection...
+backend-1  | Database connection established.
+backend-1  | INFO:     Application startup complete.
+backend-1  | INFO:     172.20.0.1:40392 - "WebSocket /api/ws/" [accepted]
+backend-1  | INFO:     connection open
+backend-1  | INFO:     172.20.0.1:40406 - "WebSocket /api/ws/" [accepted]
+backend-1  | INFO:     connection open
+backend-1  | INFO:     172.20.0.6:60602 - "POST /api/auth/register HTTP/1.1" 400 Bad Request
+backend-1  | INFO:     172.20.0.6:60602 - "POST /api/auth/token HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.6:60612 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:60616 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:44432 - "GET /docs HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.1:44432 - "GET /openapi.json HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.6:42120 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:42128 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:42138 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:42148 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:36066 - "POST /api/auth/token HTTP/1.1" 401 Unauthorized
+backend-1  | INFO:     172.20.0.6:54740 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:54746 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:54758 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:54766 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:35966 - "POST /api/auth/token HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.6:52194 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:52210 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:52226 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:52238 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:45464 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:45474 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:41130 - "POST /api/auth/token HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.6:45490 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:45504 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:60240 - "GET /api/vehicles/ HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.6:41670 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:41682 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:41686 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:41694 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:54586 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:54594 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:54600 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:54606 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:53944 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:53948 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:38114 - "GET /api/vehicles/vehicle-001 HTTP/1.1" 404 Not Found
+backend-1  | INFO:     172.20.0.6:53950 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:53956 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:34064 - "GET /api/vehicles/ HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.6:52558 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:52562 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:52574 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:52576 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:41872 - "GET /api/vehicles/truck-001 HTTP/1.1" 500 Internal Server Error
+backend-1  | ERROR:    Exception in ASGI application
+backend-1  | Traceback (most recent call last):
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+backend-1  |     result = await app(  # type: ignore[func-returns-value]
+backend-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+backend-1  |     return await self.app(scope, receive, send)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1134, in __call__
+backend-1  |     await super().__call__(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+backend-1  |     await self.middleware_stack(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+backend-1  |     raise exc
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+backend-1  |     await self.app(scope, receive, _send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 85, in __call__
+backend-1  |     await self.app(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+backend-1  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend-1  |     raise exc
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+backend-1  |     await app(scope, receive, sender)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+backend-1  |     await self.app(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+backend-1  |     await self.middleware_stack(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+backend-1  |     await route.handle(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+backend-1  |     await self.app(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 125, in app
+backend-1  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend-1  |     raise exc
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+backend-1  |     await app(scope, receive, sender)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 111, in app
+backend-1  |     response = await f(request)
+backend-1  |                ^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 413, in app
+backend-1  |     content = await serialize_response(
+backend-1  |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 254, in serialize_response
+backend-1  |     raise ResponseValidationError(
+backend-1  | fastapi.exceptions.ResponseValidationError: 1 validation errors:
+backend-1  |   {'type': 'model_attributes_type', 'loc': ('response',), 'msg': 'Input should be a valid dictionary or object to extract fields from', 'input': None}
+backend-1  | 
+backend-1  | INFO:     172.20.0.6:50810 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:50818 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:39262 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:39266 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.1:41318 - "GET /api/vehicles/truck-001 HTTP/1.1" 500 Internal Server Error
+backend-1  | ERROR:    Exception in ASGI application
+backend-1  | Traceback (most recent call last):
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+backend-1  |     result = await app(  # type: ignore[func-returns-value]
+backend-1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+backend-1  |     return await self.app(scope, receive, send)
+backend-1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1134, in __call__
+backend-1  |     await super().__call__(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+backend-1  |     await self.middleware_stack(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+backend-1  |     raise exc
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+backend-1  |     await self.app(scope, receive, _send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 85, in __call__
+backend-1  |     await self.app(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+backend-1  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend-1  |     raise exc
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+backend-1  |     await app(scope, receive, sender)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+backend-1  |     await self.app(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+backend-1  |     await self.middleware_stack(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+backend-1  |     await route.handle(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+backend-1  |     await self.app(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 125, in app
+backend-1  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+backend-1  |     raise exc
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+backend-1  |     await app(scope, receive, sender)
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 111, in app
+backend-1  |     response = await f(request)
+backend-1  |                ^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 413, in app
+backend-1  |     content = await serialize_response(
+backend-1  |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+backend-1  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 254, in serialize_response
+backend-1  |     raise ResponseValidationError(
+backend-1  | fastapi.exceptions.ResponseValidationError: 1 validation errors:
+backend-1  |   {'type': 'model_attributes_type', 'loc': ('response',), 'msg': 'Input should be a valid dictionary or object to extract fields from', 'input': None}
+backend-1  | 
+backend-1  | INFO:     172.20.0.6:39274 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:39280 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:60570 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:60574 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:60576 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:60578 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:41240 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:41248 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:41264 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:41278 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:39180 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:39186 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:39194 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:39198 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:45020 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:45022 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:45026 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:45038 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:34422 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:34430 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:34446 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:34456 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:48478 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     172.20.0.6:48490 - "POST /api/telemetry/ingest HTTP/1.1" 202 Accepted
+backend-1  | INFO:     Shutting down
+backend-1  | INFO:     connection closed
+backend-1  | INFO:     connection closed
+backend-1  | INFO:     Waiting for application shutdown.
+backend-1  | INFO:     Application shutdown complete.
+backend-1  | INFO:     Finished server process [9]
+backend-1  | INFO:     Stopping reloader process [1]

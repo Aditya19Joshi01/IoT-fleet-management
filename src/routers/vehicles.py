@@ -48,6 +48,7 @@ async def get_vehicle(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Vehicle not found"
         )
+    return VehicleInfo.from_state(vehicle)
 
 @router.delete(
     "/{vehicle_id}",

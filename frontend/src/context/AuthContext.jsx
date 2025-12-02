@@ -2,6 +2,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 
+import { setAuthToken } from '../services/api';
+
 const AuthContext = createContext(null);
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -20,7 +22,7 @@ export const AuthProvider = ({ children }) => {
                     logout();
                 } else {
                     setUser({ username: decoded.sub });
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                    setAuthToken(token);
                 }
             } catch (e) {
                 logout();
@@ -39,7 +41,7 @@ export const AuthProvider = ({ children }) => {
             const { access_token } = res.data;
 
             localStorage.setItem('token', access_token);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+            setAuthToken(access_token);
 
             const decoded = jwtDecode(access_token);
             setUser({ username: decoded.sub });
@@ -52,7 +54,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         localStorage.removeItem('token');
-        delete axios.defaults.headers.common['Authorization'];
+        setAuthToken(null);
         setUser(null);
     };
 
