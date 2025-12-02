@@ -1,0 +1,46 @@
+
+services:
+  # MQTT Broker - Simulates AWS IoT Core
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883" # MQTT port
+      - "9001:9001" # Websocket port
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  # Time-series DB - Simulates AWS Timestream
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fleet_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./timescaledb_data:/var/lib/postgresql/data
+
+  # Backend API & Worker
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mosquitto
+      - timescaledb
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@timescaledb:5432/fleet_db
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+
+  # Vehicle Simulator
+  simulator:
+    build: ./simulator
+    depends_on:
+      - mosquitto
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
