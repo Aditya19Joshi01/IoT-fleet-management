@@ -29,17 +29,32 @@ services:
     networks:
       - fleet-network
 
-  frontend:
+  frontend-old:
     build:
       context: .
       dockerfile: docker/Dockerfile.frontend
     ports:
-      - "5173:5173"
+      - "5174:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - VITE_API_URL=http://localhost:8000
+    networks:
+      - fleet-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend-new
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend-1:/app
+      - /app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000/api/ws/
     networks:
       - fleet-network
 

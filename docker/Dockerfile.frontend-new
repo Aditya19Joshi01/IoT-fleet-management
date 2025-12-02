@@ -1,0 +1,7 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install dependencies and run dev server
+# We assume the volume mount will provide the code
+CMD ["sh", "-c", "npm install && npm run dev -- --hostname 0.0.0.0"]
