@@ -3,19 +3,60 @@ import { useNavigate } from 'react-router-dom';
 import { Layers, Circle, Trash2, Save, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { FleetMap } from '@/components/map/FleetMap';
 import { useFleetStore } from '@/store/fleetStore';
 import { Vehicle } from '@/types/fleet';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function LiveMap() {
-  const { vehicles, geofences, selectedVehicle, fetchVehicles, fetchGeofences, selectVehicle } = useFleetStore();
+  const { vehicles, geofences, selectedVehicle, fetchVehicles, fetchGeofences, selectVehicle, addGeofence } = useFleetStore();
   const [showGeofences, setShowGeofences] = useState(true);
   const [showVehicles, setShowVehicles] = useState(true);
   const [isDrawing, setIsDrawing] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [pendingGeofence, setPendingGeofence] = useState<{ lat: number; lng: number } | null>(null);
+  const [geofenceName, setGeofenceName] = useState('');
+  const [geofenceRadius, setGeofenceRadius] = useState(500);
   const navigate = useNavigate();
+
+  const handleMapClick = (lat: number, lng: number) => {
+    if (isDrawing) {
+      setPendingGeofence({ lat, lng });
+      setGeofenceName(`Geofence ${geofences.length + 1}`);
+    }
+  };
+
+  const handleSaveGeofence = () => {
+    if (pendingGeofence && geofenceName.trim()) {
+      addGeofence({
+        name: geofenceName.trim(),
+        center_lat: pendingGeofence.lat,
+        center_lng: pendingGeofence.lng,
+        radius_meters: geofenceRadius,
+        color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+      });
+      toast.success(`Geofence "${geofenceName}" created successfully`);
+      setPendingGeofence(null);
+      setGeofenceName('');
+      setGeofenceRadius(500);
+      setIsDrawing(false);
+    }
+  };
+
+  const handleCancelGeofence = () => {
+    setPendingGeofence(null);
+    setGeofenceName('');
+    setGeofenceRadius(500);
+  };
 
   useEffect(() => {
     fetchVehicles();
@@ -42,11 +83,13 @@ export default function LiveMap() {
           geofences={showGeofences ? geofences : []}
           selectedVehicle={selectedVehicle}
           onVehicleClick={handleVehicleClick}
+          onMapClick={handleMapClick}
+          isDrawingMode={isDrawing}
           height="100%"
         />
 
         {/* Layer Controls */}
-        <div className="absolute top-4 left-4 glass-card p-3">
+        <div className="absolute top-4 left-4 z-[1000] glass-card p-3">
           <div className="flex items-center gap-2 mb-3">
             <Layers className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">Layers</span>
@@ -73,8 +116,8 @@ export default function LiveMap() {
           </div>
         </div>
 
-        {/* Drawing Tools */}
-        <div className="absolute top-4 right-4 glass-card p-3">
+        {/* Drawing Tools - positioned below zoom controls */}
+        <div className="absolute top-24 right-4 z-[1000] glass-card p-3">
           <p className="text-sm font-medium mb-3">Geofence Tools</p>
           <div className="flex flex-col gap-2">
             <Button
@@ -101,7 +144,7 @@ export default function LiveMap() {
         <Button
           variant="glass"
           size="icon"
-          className="absolute bottom-4 right-4"
+          className="absolute bottom-4 right-4 z-[1000]"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           {sidebarOpen ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -172,6 +215,49 @@ export default function LiveMap() {
           </div>
         </div>
       </div>
+
+      {/* Geofence Creation Dialog */}
+      <Dialog open={!!pendingGeofence} onOpenChange={(open) => !open && handleCancelGeofence()}>
+        <DialogContent className="glass-card border-glass-border">
+          <DialogHeader>
+            <DialogTitle>Create Geofence</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Name</label>
+              <Input
+                value={geofenceName}
+                onChange={(e) => setGeofenceName(e.target.value)}
+                placeholder="Enter geofence name"
+                className="bg-glass border-glass-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Radius (meters)</label>
+              <Input
+                type="number"
+                value={geofenceRadius}
+                onChange={(e) => setGeofenceRadius(Number(e.target.value))}
+                min={50}
+                max={10000}
+                className="bg-glass border-glass-border"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Location: {pendingGeofence?.lat.toFixed(6)}, {pendingGeofence?.lng.toFixed(6)}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelGeofence}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveGeofence} disabled={!geofenceName.trim()}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Geofence
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

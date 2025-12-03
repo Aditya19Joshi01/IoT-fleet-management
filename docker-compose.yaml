@@ -14,9 +14,9 @@ services:
   timescaledb:
     image: timescale/timescaledb:latest-pg14
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=fleet_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -31,9 +31,9 @@ services:
       - mosquitto
       - timescaledb
     environment:
-      - DATABASE_URL=postgresql://postgres:password@timescaledb:5432/fleet_db
-      - MQTT_BROKER=mosquitto
-      - MQTT_PORT=1883
+      - DATABASE_URL=${DATABASE_URL}
+      - MQTT_BROKER=${MQTT_BROKER}
+      - MQTT_PORT=${MQTT_PORT}
 
   # Vehicle Simulator
   simulator:
@@ -41,8 +41,8 @@ services:
     depends_on:
       - mosquitto
     environment:
-      - MQTT_BROKER=mosquitto
-      - MQTT_PORT=1883
+      - MQTT_BROKER=${MQTT_BROKER}
+      - MQTT_PORT=${MQTT_PORT}
 
   # Frontend Dashboard
   frontend:

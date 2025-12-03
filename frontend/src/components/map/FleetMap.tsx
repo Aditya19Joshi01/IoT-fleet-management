@@ -8,8 +8,10 @@ interface FleetMapProps {
   geofences?: Geofence[];
   selectedVehicle?: Vehicle | null;
   onVehicleClick?: (vehicle: Vehicle) => void;
+  onMapClick?: (lat: number, lng: number) => void;
   height?: string;
   showGeofences?: boolean;
+  isDrawingMode?: boolean;
 }
 
 const statusColors = {
@@ -24,13 +26,16 @@ export function FleetMap({
   geofences = [],
   selectedVehicle,
   onVehicleClick,
+  onMapClick,
   height = '400px',
   showGeofences = true,
+  isDrawingMode = false,
 }: FleetMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const geofencesRef = useRef<L.LayerGroup | null>(null);
+  const hasFittedBounds = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -58,6 +63,28 @@ export function FleetMap({
       mapRef.current = null;
     };
   }, []);
+
+  // Handle map clicks for geofence drawing
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      if (isDrawingMode && onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    };
+
+    mapRef.current.on('click', handleMapClick);
+
+    // Update cursor style
+    if (containerRef.current) {
+      containerRef.current.style.cursor = isDrawingMode ? 'crosshair' : '';
+    }
+
+    return () => {
+      mapRef.current?.off('click', handleMapClick);
+    };
+  }, [isDrawingMode, onMapClick]);
 
   // Update markers
   useEffect(() => {
@@ -106,6 +133,13 @@ export function FleetMap({
         marker.on('click', () => onVehicleClick(vehicle));
       }
     });
+
+    // Auto-fit bounds if we have vehicles and no specific selection (only once)
+    if (vehicles.length > 0 && !selectedVehicle && !hasFittedBounds.current) {
+      const bounds = L.latLngBounds(vehicles.map(v => [v.latitude, v.longitude]));
+      mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      hasFittedBounds.current = true;
+    }
   }, [vehicles, selectedVehicle, onVehicleClick]);
 
   // Update geofences

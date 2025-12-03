@@ -11,14 +11,26 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
-  const { dashboardData, vehicles, alerts, selectedVehicle, isLoading, fetchDashboard, selectVehicle, fetchGeofences, geofences } = useFleetStore();
+  const {
+    dashboardData,
+    vehicles,
+    alerts,
+    selectedVehicle,
+    isLoading,
+    selectVehicle,
+    fetchGeofences,
+    geofences,
+    startPolling,
+    stopPolling
+  } = useFleetStore();
+
   const [vehicleListOpen, setVehicleListOpen] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchDashboard();
-    fetchGeofences();
-  }, [fetchDashboard, fetchGeofences]);
+    startPolling();
+    return () => stopPolling();
+  }, [startPolling, stopPolling]);
 
   const handleVehicleClick = (vehicle: typeof vehicles[0]) => {
     selectVehicle(selectedVehicle?.vehicle_id === vehicle.vehicle_id ? null : vehicle);
@@ -83,7 +95,7 @@ export default function Dashboard() {
           subtitle="Click to view details"
           icon={AlertTriangle}
           variant={dashboardData.alert_count > 0 ? 'danger' : 'success'}
-          onClick={() => {}}
+          onClick={() => { }}
         />
       </div>
 
@@ -116,7 +128,7 @@ export default function Dashboard() {
             onVehicleClick={handleVehicleClick}
             height="450px"
           />
-          
+
           {/* Map Legend */}
           <div className="flex items-center gap-6 mt-4 text-sm">
             <div className="flex items-center gap-2">

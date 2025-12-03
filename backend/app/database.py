@@ -32,6 +32,16 @@ async def init_db():
                 heading     DOUBLE PRECISION,
                 status      TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS geofences (
+                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name          TEXT NOT NULL,
+                center_lat    DOUBLE PRECISION NOT NULL,
+                center_lng    DOUBLE PRECISION NOT NULL,
+                radius_meters DOUBLE PRECISION NOT NULL,
+                color         TEXT DEFAULT '#3B82F6',
+                created_at    TIMESTAMPTZ DEFAULT NOW()
+            );
         """)
         
         # Migration: Add columns if they don't exist (for existing DBs)
