@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db_pool
 from app.mqtt_service import start_mqtt
-from app.routers import vehicles
+from app.routers import vehicles, analytics
 
 # Logging
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +23,7 @@ app.add_middleware(
 
 # Include Routers
 app.include_router(vehicles.router)
+app.include_router(analytics.router)
 
 @app.on_event("startup")
 async def startup_event():
