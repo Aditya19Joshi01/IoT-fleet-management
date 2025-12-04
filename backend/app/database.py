@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 # Timestream Configuration
 DATABASE_NAME = os.getenv("TIMESTREAM_DB", "fleet-management-db-dev")
 TABLE_NAME = os.getenv("TIMESTREAM_TABLE", "telemetry")
-REGION_NAME = os.getenv("AWS_REGION", "us-east-1")
+REGION_NAME = os.getenv("AWS_REGION", "eu-west-1")
 
 # Initialize Timestream Query Client
 # We use a standard client. In Lambda, credentials are auto-injected.

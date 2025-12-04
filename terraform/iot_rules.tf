@@ -9,10 +9,10 @@ resource "aws_iot_topic_rule" "telemetry_to_timestream" {
     database_name = aws_timestreamwrite_database.fleet_db.database_name
     table_name    = aws_timestreamwrite_table.telemetry_table.table_name
     role_arn      = aws_iam_role.iot_timestream_role.arn
-    
+
     dimension {
       name  = "vehicle_id"
-      value = "${topic(2)}" 
+      value = "$${topic(2)}"
     }
   }
 }
