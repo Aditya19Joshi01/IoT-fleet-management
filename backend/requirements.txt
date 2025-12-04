@@ -1,5 +1,6 @@
 fastapi
 uvicorn
-asyncpg
-paho-mqtt<2.0.0
+mangum
+boto3
 python-dotenv
+pydantic

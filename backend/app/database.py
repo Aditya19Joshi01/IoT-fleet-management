@@ -1,73 +1,71 @@
-import asyncpg
+import boto3
+import os
 import logging
-from .config import Config
+from botocore.config import Config as BotoConfig
 
 logger = logging.getLogger(__name__)
-db_pool = None
 
-async def get_db_pool():
-    global db_pool
-    if not db_pool:
-        db_pool = await asyncpg.create_pool(Config.DATABASE_URL)
-    return db_pool
+# Timestream Configuration
+DATABASE_NAME = os.getenv("TIMESTREAM_DB", "fleet-management-db-dev")
+TABLE_NAME = os.getenv("TIMESTREAM_TABLE", "telemetry")
+REGION_NAME = os.getenv("AWS_REGION", "us-east-1")
+
+# Initialize Timestream Query Client
+# We use a standard client. In Lambda, credentials are auto-injected.
+ts_query = boto3.client(
+    'timestream-query', 
+    region_name=REGION_NAME,
+    config=BotoConfig(read_timeout=20, retries={'max_attempts': 10})
+)
+
+def run_query(query_string):
+    """
+    Executes a query against Amazon Timestream and returns the results as a list of dictionaries.
+    """
+    try:
+        paginator = ts_query.get_paginator('query')
+        page_iterator = paginator.paginate(QueryString=query_string)
+        
+        results = []
+        for page in page_iterator:
+            results.extend(_parse_query_result(page))
+            
+        return results
+    except Exception as e:
+        logger.error(f"Error running query: {e}")
+        return []
+
+def _parse_query_result(query_result):
+    """
+    Helper to parse Timestream query response into a list of dicts.
+    """
+    column_info = query_result['ColumnInfo']
+    rows = query_result['Rows']
+    
+    parsed_rows = []
+    for row in rows:
+        data = row['Data']
+        row_dict = {}
+        for i, col in enumerate(column_info):
+            col_name = col['Name']
+            val = data[i].get('ScalarValue')
+            
+            # Basic type conversion (expand as needed)
+            if val is None:
+                row_dict[col_name] = None
+            elif 'Type' in col and col['Type']['ScalarType'] == 'DOUBLE':
+                row_dict[col_name] = float(val)
+            elif 'Type' in col and col['Type']['ScalarType'] == 'BIGINT':
+                row_dict[col_name] = int(val)
+            else:
+                row_dict[col_name] = val
+                
+        parsed_rows.append(row_dict)
+    return parsed_rows
+
+# No init_db needed for Timestream as it's serverless and schema-less (mostly)
+async def init_db():
+    pass
 
 async def close_db_pool():
-    global db_pool
-    if db_pool:
-        await db_pool.close()
-
-async def init_db():
-    pool = await get_db_pool()
-    async with pool.acquire() as conn:
-        # Create table with new schema
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS vehicle_telemetry (
-                time        TIMESTAMPTZ       NOT NULL,
-                vehicle_id  TEXT              NOT NULL,
-                latitude    DOUBLE PRECISION  NOT NULL,
-                longitude   DOUBLE PRECISION  NOT NULL,
-                speed       DOUBLE PRECISION  NOT NULL,
-                fuel_level  DOUBLE PRECISION,
-                engine_temp DOUBLE PRECISION,
-                heading     DOUBLE PRECISION,
-                status      TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS geofences (
-                id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                name          TEXT NOT NULL,
-                center_lat    DOUBLE PRECISION NOT NULL,
-                center_lng    DOUBLE PRECISION NOT NULL,
-                radius_meters DOUBLE PRECISION NOT NULL,
-                color         TEXT DEFAULT '#3B82F6',
-                created_at    TIMESTAMPTZ DEFAULT NOW()
-            );
-        """)
-        
-        # Migration: Add columns if they don't exist (for existing DBs)
-        for col, dtype in [
-            ("fuel_level", "DOUBLE PRECISION"), 
-            ("engine_temp", "DOUBLE PRECISION"), 
-            ("heading", "DOUBLE PRECISION"),
-            ("status", "TEXT")
-        ]:
-            try:
-                await conn.execute(f"ALTER TABLE vehicle_telemetry ADD COLUMN IF NOT EXISTS {col} {dtype};")
-            except Exception as e:
-                logger.warning(f"Could not add column {col}: {e}")
-
-        # Convert to hypertable
-        try:
-            await conn.execute("SELECT create_hypertable('vehicle_telemetry', 'time', if_not_exists => TRUE);")
-            logger.info("Verified vehicle_telemetry is a hypertable")
-        except Exception as e:
-            logger.warning(f"Hypertable creation skipped: {e}")
-
-async def save_telemetry(data: dict):
-    pool = await get_db_pool()
-    async with pool.acquire() as conn:
-        await conn.execute("""
-            INSERT INTO vehicle_telemetry (time, vehicle_id, latitude, longitude, speed, fuel_level, engine_temp, heading, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        """, data['timestamp'], data['vehicle_id'], data['latitude'], data['longitude'], data['speed'],
-           data.get('fuel_level'), data.get('engine_temp'), data.get('heading'), data.get('status'))
+    pass
