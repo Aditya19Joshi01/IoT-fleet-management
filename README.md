@@ -1,7 +1,6 @@
 # IoT Fleet Management System
 
 ![Dashboard Preview](./dashboard-preview.png)
-*(Add your dashboard screenshot here: Save it as `dashboard-preview.png` in the root folder)*
 
 A real-time fleet management solution built with modern web technologies and IoT protocols. This system enables real-time tracking of vehicles, geofence management, and historical analytics using a high-performance time-series database.
 
@@ -38,7 +37,7 @@ A real-time fleet management solution built with modern web technologies and IoT
 
 1.  **Clone the repository**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/Aditya19Joshi01/IoT-fleet-management.git
     cd fleet-management
     ```
 
