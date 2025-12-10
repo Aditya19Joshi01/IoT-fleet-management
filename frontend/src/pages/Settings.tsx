@@ -68,7 +68,12 @@ export default function Settings() {
   );
 }
 
-function ProfileSettings({ user }: { user: any }) {
+interface UserProfile {
+  username?: string;
+  email?: string;
+}
+
+function ProfileSettings({ user }: { user: UserProfile }) {
   const [formData, setFormData] = useState({
     username: user?.username || '',
     email: user?.email || '',
@@ -84,7 +89,7 @@ function ProfileSettings({ user }: { user: any }) {
   return (
     <div className="glass-card p-6 space-y-6">
       <h2 className="font-semibold text-lg text-foreground">User Profile</h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Username</label>
@@ -222,7 +227,16 @@ function NotificationSettings() {
   );
 }
 
-function GeofenceSettings({ geofences, onDelete }: { geofences: any[]; onDelete: (id: string) => void }) {
+interface GeofenceDisplay {
+  id: string;
+  name: string;
+  center_lat: number;
+  center_lng: number;
+  radius_meters: number;
+  color: string;
+}
+
+function GeofenceSettings({ geofences, onDelete }: { geofences: GeofenceDisplay[]; onDelete: (id: string) => void }) {
   const handleDelete = (id: string, name: string) => {
     onDelete(id);
     toast.success(`Geofence "${name}" deleted`);

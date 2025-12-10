@@ -2,13 +2,21 @@ import { Vehicle, DashboardSnapshot, Geofence } from '@/types/fleet';
 
 const API_BASE = '/api';
 
+interface RawVehicleData {
+    vehicle_id: string;
+    speed: number;
+    fuel_level?: number;
+    last_update: string;
+    [key: string]: unknown; // allow other props
+}
+
 export const api = {
     // Vehicles
     getVehicles: async (): Promise<Vehicle[]> => {
         const res = await fetch(`${API_BASE}/vehicles`);
         if (!res.ok) throw new Error('Failed to fetch vehicles');
         const data = await res.json();
-        return data.map((v: any) => ({
+        return data.map((v: RawVehicleData) => ({
             ...v,
             display_name: v.vehicle_id, // Default display name
             speed_kmh: v.speed,         // Map speed
@@ -20,7 +28,7 @@ export const api = {
         }));
     },
 
-    getVehicleHistory: async (vehicleId: string): Promise<any[]> => {
+    getVehicleHistory: async (vehicleId: string): Promise<Record<string, unknown>[]> => {
         const res = await fetch(`${API_BASE}/history/${vehicleId}`);
         if (!res.ok) throw new Error('Failed to fetch vehicle history');
         return res.json();

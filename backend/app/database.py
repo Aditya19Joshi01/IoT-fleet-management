@@ -15,6 +15,7 @@ async def close_db_pool():
     global db_pool
     if db_pool:
         await db_pool.close()
+        db_pool = None
 
 async def init_db():
     pool = await get_db_pool()
