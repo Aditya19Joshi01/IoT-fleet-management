@@ -22,11 +22,8 @@ vi.mock("@/components/AnalyticsPanel", () => ({
 
 describe("App", () => {
     it("renders the dashboard layout", () => {
-        render(
-            <MemoryRouter>
-                <App />
-            </MemoryRouter>
-        );
+        // App already has BrowserRouter, so we don't need MemoryRouter here.
+        render(<App />);
         // Check for title or main layout elements
         // Since App has a Route to Index, and Index has Dashboard
         // We are mocking children, so we expect to see them potentially if they are rendered immediately.
