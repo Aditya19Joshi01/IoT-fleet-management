@@ -60,6 +60,7 @@ postgres-data/
 .terraform/
 *.tfstate
 *.tfstate.backup
+lambda_function_payload.zip
 
-# Local Gemin artifacts
+# Local Gemini artifacts
 .gemini/
