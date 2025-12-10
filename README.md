@@ -67,17 +67,55 @@ fleet-management/
 │   │   ├── routers/        # API endpoints (vehicles, geofences, analytics)
 │   │   ├── models.py       # Pydantic models
 │   │   └── mqtt_service.py # MQTT consumer logic
+│   ├── tests/              # Pytest unit tests
 │   └── Dockerfile
 ├── frontend/                # React application
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
 │   │   ├── pages/          # Main application pages
+│   │   ├── tests/          # Vitest component tests
 │   │   └── store/          # Zustand state management
 │   └── Dockerfile
 ├── simulator/               # Python vehicle simulator
+│   ├── tests/              # Simulator unit tests
+│   └── simulator.py
+├── .github/
+│   └── workflows/          # CI/CD pipelines
 ├── mosquitto/               # MQTT broker config
 └── docker-compose.yaml      # Service orchestration
 ```
+
+## 🧪 Testing
+
+The project is fully tested across all components.
+
+### Backend
+Run unit tests for API endpoints and logic:
+```bash
+cd backend
+python -m pytest tests/test_main.py
+```
+
+### Frontend
+Run component integration tests:
+```bash
+cd frontend
+npm test
+```
+
+### Simulator
+Run verification tests for telemetry generation:
+```bash
+python -m unittest simulator/tests/test_simulator.py
+```
+
+## 🔄 CI/CD Pipeline
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) is configured to automatically run all tests on every push and pull request to the `main` branch.
+
+- **Backend Job**: Runs `pytest` on Python 3.11.
+- **Frontend Job**: Runs `vitest` on Node.js 20.
+- **Simulator Job**: Runs `unittest`.
 
 ## 🔧 API Documentation
 
