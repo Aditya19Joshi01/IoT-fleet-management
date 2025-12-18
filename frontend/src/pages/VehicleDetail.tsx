@@ -1,20 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gauge, Fuel, Thermometer, Clock, Navigation, MapPin, AlertTriangle, Activity } from 'lucide-react';
+import { ArrowLeft, Gauge, Fuel, Thermometer, Clock, Navigation, MapPin, AlertTriangle, Activity, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FleetMap } from '@/components/map/FleetMap';
+import { PlaybackControls } from '@/components/map/PlaybackControls';
 import { useFleetStore } from '@/store/fleetStore';
 import { generateMockTelemetry } from '@/services/mockData';
-import { TelemetryPoint, Alert } from '@/types/fleet';
+import { HistoryService, RoutePoint } from '@/services/HistoryService';
+import { TelemetryPoint } from '@/types/fleet';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, subHours } from 'date-fns';
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { vehicles, geofences, fetchVehicles, fetchGeofences } = useFleetStore();
   const [telemetry, setTelemetry] = useState<TelemetryPoint[]>([]);
+
+  // Playback State
+  const [isHistoryMode, setIsHistoryMode] = useState(false);
+  const [historyRoute, setHistoryRoute] = useState<RoutePoint[]>([]);
+  const [playbackIndex, setPlaybackIndex] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const playbackTimer = useRef<NodeJS.Timeout | null>(null);
 
   const vehicle = vehicles.find((v) => v.vehicle_id === id);
 
@@ -23,6 +33,71 @@ export default function VehicleDetail() {
     if (geofences.length === 0) fetchGeofences();
     setTelemetry(generateMockTelemetry(24));
   }, [fetchVehicles, fetchGeofences, vehicles.length, geofences.length]);
+
+  // Fetch history when mode enabled
+  const toggleHistoryMode = async () => {
+    if (!isHistoryMode) {
+      setIsHistoryMode(true);
+      if (id) {
+        try {
+          // Fetch last 24h by default
+          const end = new Date();
+          const start = subHours(end, 24);
+          const data = await HistoryService.getRouteHistory(id, start, end);
+          setHistoryRoute(data);
+          setPlaybackIndex(0);
+        } catch (error) {
+          console.error("Failed to fetch history", error);
+          // Fallback to empty or mock if needed
+        }
+      }
+    } else {
+      setIsHistoryMode(false);
+      setIsPlaying(false);
+      setPlaybackIndex(null);
+      setHistoryRoute([]);
+    }
+  };
+
+  // Playback Logic
+  useEffect(() => {
+    if (isPlaying && historyRoute.length > 0) {
+      playbackTimer.current = setInterval(() => {
+        setPlaybackIndex((prev) => {
+          const next = (prev ?? 0) + 1;
+          if (next >= historyRoute.length) {
+            setIsPlaying(false);
+            return prev; // Stop at end
+          }
+          return next;
+        });
+      }, 1000 / playbackSpeed); // Adjust speed
+    } else {
+      if (playbackTimer.current) clearInterval(playbackTimer.current);
+    }
+    return () => {
+      if (playbackTimer.current) clearInterval(playbackTimer.current);
+    }
+  }, [isPlaying, historyRoute, playbackSpeed]);
+
+  const handleSeek = (val: number) => {
+    if (historyRoute.length === 0) return;
+    const idx = Math.floor((val / 100) * (historyRoute.length - 1));
+    setPlaybackIndex(idx);
+  };
+
+  const getProgress = () => {
+    if (historyRoute.length === 0 || playbackIndex === null) return 0;
+    return (playbackIndex / (historyRoute.length - 1)) * 100;
+  };
+
+  const getCurrentRefTime = () => {
+    if (playbackIndex !== null && historyRoute[playbackIndex]) {
+      return format(new Date(historyRoute[playbackIndex].time), 'MMM dd HH:mm:ss');
+    }
+    return undefined;
+  };
+
 
   if (!vehicle) {
     return (
@@ -57,7 +132,7 @@ export default function VehicleDetail() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-20">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -72,6 +147,14 @@ export default function VehicleDetail() {
           </div>
           <p className="text-muted-foreground">{vehicle.vehicle_id}</p>
         </div>
+        <Button
+          variant={isHistoryMode ? "default" : "outline"}
+          onClick={toggleHistoryMode}
+          className="gap-2"
+        >
+          <History className="w-4 h-4" />
+          {isHistoryMode ? "Exit Playback" : "View Route History"}
+        </Button>
       </div>
 
       {/* Key Metrics */}
@@ -124,14 +207,38 @@ export default function VehicleDetail() {
 
       {/* Map & Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card p-4">
-          <h2 className="font-semibold text-foreground mb-4">Live Location</h2>
-          <FleetMap
-            vehicles={[vehicle]}
-            geofences={geofences}
-            selectedVehicle={vehicle}
-            height="300px"
-          />
+        <div className="lg:col-span-2 glass-card p-4 relative">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-foreground">
+              {isHistoryMode ? `Route Playback (${getCurrentRefTime() || 'Loading...'})` : 'Live Location'}
+            </h2>
+            {isHistoryMode && (
+              <Badge variant="outline" className="animate-pulse">Playback Mode</Badge>
+            )}
+          </div>
+
+          <div className="relative">
+            <FleetMap
+              vehicles={isHistoryMode ? [] : [vehicle]} // Hide live vehicle in history mode to avoid confusion? Or show both? Let's hide live.
+              geofences={geofences}
+              selectedVehicle={isHistoryMode ? null : vehicle}
+              height="400px" // Taller for playback
+              playbackRoute={isHistoryMode ? historyRoute : undefined}
+              playbackIndex={playbackIndex}
+            />
+
+            {isHistoryMode && (
+              <PlaybackControls
+                isPlaying={isPlaying}
+                onPlayPause={() => setIsPlaying(!isPlaying)}
+                progress={getProgress()}
+                onSeek={handleSeek}
+                speed={playbackSpeed}
+                onSpeedChange={setPlaybackSpeed}
+                currentTime={getCurrentRefTime()}
+              />
+            )}
+          </div>
         </div>
         <div className="glass-card p-4">
           <h2 className="font-semibold text-foreground mb-4">Location Info</h2>

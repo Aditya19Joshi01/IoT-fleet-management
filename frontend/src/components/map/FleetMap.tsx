@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Vehicle, Geofence } from '@/types/fleet';
+import { RoutePoint } from '@/services/HistoryService';
 
 interface FleetMapProps {
   vehicles: Vehicle[];
@@ -12,6 +13,9 @@ interface FleetMapProps {
   height?: string;
   showGeofences?: boolean;
   isDrawingMode?: boolean;
+  // Playback props
+  playbackRoute?: RoutePoint[];
+  playbackIndex?: number | null;
 }
 
 const statusColors = {
@@ -30,11 +34,15 @@ export function FleetMap({
   height = '400px',
   showGeofences = true,
   isDrawingMode = false,
+  playbackRoute,
+  playbackIndex,
 }: FleetMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const geofencesRef = useRef<L.LayerGroup | null>(null);
+  const routeRef = useRef<L.Polyline | null>(null);
+  const playbackMarkerRef = useRef<L.Marker | null>(null);
   const hasFittedBounds = useRef(false);
 
   useEffect(() => {
@@ -159,6 +167,69 @@ export function FleetMap({
         .bindTooltip(geofence.name, { permanent: false });
     });
   }, [geofences, showGeofences]);
+
+  // Handle Route Playback
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear existing route stuff if disabled
+    if (!playbackRoute || playbackRoute.length === 0) {
+      if (routeRef.current) {
+        routeRef.current.remove();
+        routeRef.current = null;
+      }
+      if (playbackMarkerRef.current) {
+        playbackMarkerRef.current.remove();
+        playbackMarkerRef.current = null;
+      }
+      return;
+    }
+
+    // Draw Route Polyline
+    const latlngs = playbackRoute.map(p => [p.latitude, p.longitude] as [number, number]);
+
+    if (!routeRef.current) {
+      routeRef.current = L.polyline(latlngs, {
+        color: '#3B82F6',
+        weight: 4,
+        opacity: 0.6,
+        dashArray: '10, 10', // Dashed line for history
+      }).addTo(mapRef.current);
+
+      // Fit bounds to route
+      mapRef.current.fitBounds(L.latLngBounds(latlngs), { padding: [50, 50] });
+    } else {
+      routeRef.current.setLatLngs(latlngs);
+    }
+
+    // Handle Playback Marker
+    if (playbackIndex !== null && playbackIndex >= 0 && playbackIndex < playbackRoute.length) {
+      const point = playbackRoute[playbackIndex];
+      const latlng: [number, number] = [point.latitude, point.longitude];
+
+      if (!playbackMarkerRef.current) {
+        const icon = L.divIcon({
+          className: 'playback-marker',
+          html: `
+                  <div style="
+                    width: 20px;
+                    height: 20px;
+                    background: #3B82F6;
+                    border: 3px solid white;
+                    border-radius: 50%;
+                    box-shadow: 0 0 15px #3B82F6;
+                  "></div>
+                `,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+
+        playbackMarkerRef.current = L.marker(latlng, { icon, zIndexOffset: 1000 }).addTo(mapRef.current);
+      } else {
+        playbackMarkerRef.current.setLatLng(latlng);
+      }
+    }
+  }, [playbackRoute, playbackIndex]);
 
   // Center on selected vehicle
   useEffect(() => {

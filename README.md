@@ -7,6 +7,8 @@ A real-time fleet management solution built with modern web technologies and IoT
 - **Real-time Tracking**: Live updates of vehicle locations, speed, and status on an interactive map.
 ![Dashboard Preview](./dashboard-preview.png)
 - **Geofencing**: Create and manage circular geofences with visual feedback.
+- **Route Playback**: Visualize vehicle history with animated playback, speed controls, and a historical route path.
+![Route History](./route-history.png)
 - **Live Telemetry**: Monitor fuel levels, engine temperature, and vehicle status (Moving, Idle, Offline).
 ![Live Map](./live-map.png)
 - **Analytics Dashboard**: Visual insights into fleet performance, speed trends, and distance metrics.
