@@ -5,3 +5,4 @@ class Config:
     MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
     MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
     MQTT_TOPIC = "vehicles/+/telemetry"
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

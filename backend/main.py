@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db_pool
 from app.mqtt_service import start_mqtt
+from app.redis_manager import redis_manager
 from app.routers import vehicles, analytics, geofences
 
 # Logging
@@ -29,11 +30,13 @@ app.include_router(geofences.router)
 @app.on_event("startup")
 async def startup_event():
     await init_db()
+    await redis_manager.connect()
     start_mqtt(asyncio.get_event_loop())
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await close_db_pool()
+    await redis_manager.close()
 
 @app.get("/")
 async def root():

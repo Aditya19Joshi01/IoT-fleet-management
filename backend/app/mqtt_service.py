@@ -5,6 +5,7 @@ import paho.mqtt.client as mqtt
 from datetime import datetime
 from .config import Config
 from .database import save_telemetry
+from .redis_manager import redis_manager
 
 logger = logging.getLogger(__name__)
 loop = None
@@ -12,6 +13,10 @@ loop = None
 def on_connect(client, userdata, flags, rc):
     logger.info(f"Connected to MQTT Broker with result code {rc}")
     client.subscribe(Config.MQTT_TOPIC)
+
+async def process_message(payload):
+    await save_telemetry(payload)
+    await redis_manager.update_vehicle_state(payload['vehicle_id'], payload)
 
 def on_message(client, userdata, msg):
     try:
@@ -23,7 +28,7 @@ def on_message(client, userdata, msg):
             
         # Fire and forget async task
         if loop:
-            asyncio.run_coroutine_threadsafe(save_telemetry(payload), loop)
+            asyncio.run_coroutine_threadsafe(process_message(payload), loop)
     except Exception as e:
         logger.error(f"Error processing message: {e}")
 

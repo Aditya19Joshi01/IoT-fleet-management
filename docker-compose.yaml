@@ -10,6 +10,11 @@ services:
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
   # Time-series DB - Simulates AWS Timestream
   timescaledb:
     image: timescale/timescaledb:latest-pg14
@@ -30,10 +35,12 @@ services:
     depends_on:
       - mosquitto
       - timescaledb
+      - redis
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - MQTT_BROKER=${MQTT_BROKER}
       - MQTT_PORT=${MQTT_PORT}
+      - REDIS_URL=redis://redis:6379/0
 
   # Vehicle Simulator
   simulator:

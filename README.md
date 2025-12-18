@@ -13,6 +13,15 @@ A real-time fleet management solution built with modern web technologies and IoT
 - **Event Simulation**: Integrated simulator to generate realistic vehicle traffic and telemetry data.
 - **Responsive Design**: Modern, glassmorphism-inspired UI built with Tailwind CSS.
 
+## 🚀 Performance & Optimization
+
+We have integrated **Redis** to cache real-time vehicle telemetry, resulting in a significant reduction in API latency and database load.
+
+![Performance Improvement](./improvements_1.png)
+
+- **Latency**: Reduced from ~92ms to ~32ms (**~3x improvement**).
+- **Scalability**: Decoupled read operations from the primary Time-series database, enabling high-concurrency for dashboard viewers.
+
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -25,6 +34,7 @@ A real-time fleet management solution built with modern web technologies and IoT
 ### Backend
 - **API**: FastAPI (Python)
 - **Database**: TimescaleDB (PostgreSQL extension for time-series data)
+- **Caching**: Redis (Real-time state and statistics)
 - **Message Broker**: Eclipse Mosquitto (MQTT)
 - **Containerization**: Docker & Docker Compose
 
