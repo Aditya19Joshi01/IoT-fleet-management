@@ -1,15 +1,16 @@
 # IoT Fleet Management System
 
-![Dashboard Preview](./dashboard-preview.png)
-
 A real-time fleet management solution built with modern web technologies and IoT protocols. This system enables real-time tracking of vehicles, geofence management, and historical analytics using a high-performance time-series database.
 
 ## 🚀 Features
 
 - **Real-time Tracking**: Live updates of vehicle locations, speed, and status on an interactive map.
+![Dashboard Preview](./dashboard-preview.png)
 - **Geofencing**: Create and manage circular geofences with visual feedback.
 - **Live Telemetry**: Monitor fuel levels, engine temperature, and vehicle status (Moving, Idle, Offline).
+![Live Map](./live-map.png)
 - **Analytics Dashboard**: Visual insights into fleet performance, speed trends, and distance metrics.
+![Analytics Preview](./analytics.png)
 - **Event Simulation**: Integrated simulator to generate realistic vehicle traffic and telemetry data.
 - **Responsive Design**: Modern, glassmorphism-inspired UI built with Tailwind CSS.
 
