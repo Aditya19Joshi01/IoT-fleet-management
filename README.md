@@ -5,14 +5,14 @@ A real-time fleet management solution built with modern web technologies and IoT
 ## 🚀 Features
 
 - **Real-time Tracking**: Live updates of vehicle locations, speed, and status on an interactive map.
-![Dashboard Preview](./dashboard-preview.png)
+![Dashboard Preview](./images/dashboard-preview.png)
 - **Geofencing**: Create and manage circular geofences with visual feedback.
 - **Route Playback**: Visualize vehicle history with animated playback, speed controls, and a historical route path.
-![Route History](./route-history.png)
+![Route History](./images/route-history.png)
 - **Live Telemetry**: Monitor fuel levels, engine temperature, and vehicle status (Moving, Idle, Offline).
-![Live Map](./live-map.png)
+![Live Map](./images/live-map.png)
 - **Analytics Dashboard**: Visual insights into fleet performance, speed trends, and distance metrics.
-![Analytics Preview](./analytics.png)
+![Analytics Preview](./images/analytics.png)
 - **Event Simulation**: Integrated simulator to generate realistic vehicle traffic and telemetry data.
 - **Responsive Design**: Modern, glassmorphism-inspired UI built with Tailwind CSS.
 
@@ -20,7 +20,7 @@ A real-time fleet management solution built with modern web technologies and IoT
 
 I have integrated **Redis** to cache real-time vehicle telemetry, resulting in a significant reduction in API latency and database load.
 
-![Performance Improvement](./improvements_1.png)
+![Performance Improvement](./images/improvements_1.png)
 
 - **Latency**: Reduced from ~92ms to ~32ms (**~3x improvement**).
 - **Scalability**: Decoupled read operations from the primary Time-series database, enabling high-concurrency for dashboard viewers.
