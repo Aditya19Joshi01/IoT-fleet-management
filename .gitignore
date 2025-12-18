@@ -62,5 +62,7 @@ postgres-data/
 *.tfstate.backup
 lambda_function_payload.zip
 
-# Local Gemini artifacts
+# Local artifacts
 .gemini/
+mosquitto/log/
+timescaledb_data/

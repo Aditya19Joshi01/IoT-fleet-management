@@ -70,14 +70,24 @@ def client(mock_pool_conn):
     with patch("asyncpg.create_pool", new=mock_create_pool):
         # Patch MQTT
         with patch("paho.mqtt.client.Client"):
-            try:
-                from main import app
-            except ImportError:
-                from backend.main import app
-            
-            from fastapi.testclient import TestClient
-            with TestClient(app) as test_client:
-                yield test_client
+            # Patch RedisManager
+            with patch("app.redis_manager.redis_manager") as mock_redis:
+                # Setup default Redis mock behavior
+                mock_redis.get_all_vehicles = AsyncMock(return_value=[])
+                mock_redis.get_stats = AsyncMock(return_value={})
+                mock_redis.connect = AsyncMock()
+                mock_redis.close = AsyncMock()
+                
+                try:
+                    from main import app
+                except ImportError:
+                    from backend.main import app
+                
+                # Make Redis mock accessible via client.redis_mock
+                from fastapi.testclient import TestClient
+                with TestClient(app) as test_client:
+                    test_client.redis_mock = mock_redis
+                    yield test_client
 
 @pytest.fixture(autouse=True)
 def reset_mock(mock_pool_conn):
@@ -99,7 +109,9 @@ def test_read_root(client):
 # -- Vehicles Router --
 
 def test_get_vehicles(client, reset_mock):
-    reset_mock.fetch.return_value = [SAMPLE_VEHICLE]
+    # Mock Redis return instead of DB
+    client.redis_mock.get_all_vehicles.return_value = [SAMPLE_VEHICLE]
+    
     response = client.get("/vehicles")
     assert response.status_code == 200
     data = response.json()
@@ -114,7 +126,15 @@ def test_get_vehicle_history(client, reset_mock):
     assert len(data) == 1
 
 def test_get_dashboard_stats(client, reset_mock):
-    reset_mock.fetch.return_value = [SAMPLE_VEHICLE] # Returns 1 moving vehicle
+    # Mock Redis return
+    client.redis_mock.get_stats.return_value = {
+        "total_vehicles": 1,
+        "active_vehicles": 1,
+        "idle_vehicles": 0,
+        "offline_vehicles": 0,
+        "avg_speed": 60.5
+    }
+    
     response = client.get("/dashboard/stats")
     assert response.status_code == 200
     data = response.json()
